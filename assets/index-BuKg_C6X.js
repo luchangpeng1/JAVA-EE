@@ -106,7 +106,7 @@ D. name 属性用来指定按钮页面显示的名称
 10. 下面说法中错误的是()
 A. <input type="checkbox" checked> 中的 checked 属性用来设置该复选框默认是否被选中
 B. <input type="hidden"> 表示一个隐藏区域，用户可以在其中输入某些要传送的信息
-C. <input type="password"> 表示这是一个密码区域，当用户输入密码时区域内将会显示“。”号
+C. <input type="password"> 表示这是一个密码区域，当用户输入密码时区域内将会显示"。"号
 D. <input type="radio"> 表示这是一个单选按钮
 答案：B
 
@@ -516,31 +516,6 @@ B. 将请求转发到 a.jsp 页面
 C. 从 a.jsp 定向到当前页面
 D. 从 a.jsp 转发到当前页面
 答案：B
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
