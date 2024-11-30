@@ -7,12 +7,7 @@ export default defineConfig({
   base: '/JAVA-EE/',
   build: {
     outDir: 'dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        manualChunks: undefined
-      }
-    }
+    emptyOutDir: true
   },
   resolve: {
     alias: {
