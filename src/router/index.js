@@ -1,4 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
+// 确保使用完整的导入路径
+import { createRouter, createWebHashHistory } from 'vue-router/dist/vue-router.esm-bundler'
 import ChoiceView from '../views/ChoiceView.vue'
 import ShortAnswerView from '../views/ShortAnswerView.vue'
 import ProgrammingView from '../views/ProgrammingView.vue'
@@ -26,8 +27,8 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory('/JAVA-EE/'),
   routes
 })
 
-export default router 
+export default router

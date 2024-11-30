@@ -15,40 +15,49 @@
 
     <!-- 右侧内容 -->
     <div class="content">
-      <div v-for="chapter in chapters" 
-           :key="chapter.id" 
-           :id="chapter.id"
-           class="chapter">
-        <h2>{{ chapter.title }}</h2>
-        
-        <div v-for="question in chapter.questions" 
-             :key="question.id"
-             class="question-card">
-          <!-- 题目标题（可点击展开/收起） -->
-          <div class="question-header" @click="toggleQuestion(question)">
-            <span class="toggle-icon">{{ question.isVisible ? '▼' : '▶' }}</span>
-            <strong>{{ question.id }}. {{ question.content }}</strong>
-          </div>
+      <!-- 添加加载状态显示 -->
+      <div v-if="loading" class="loading">
+        加载中...
+      </div>
+      
+      <!-- 添加错误信息显示 -->
+      <div v-else-if="error" class="error">
+        {{ error }}
+      </div>
+      
+      <!-- 题目内容 -->
+      <div v-else>
+        <div v-for="chapter in chapters" 
+             :key="chapter.id" 
+             :id="chapter.id"
+             class="chapter">
+          <h2>{{ chapter.title }}</h2>
           
-          <!-- 题目内容 -->
-          <div v-show="question.isVisible" class="question-content">
-            <!-- 选项 -->
-            <div class="options">
-              <div v-for="(option, key) in question.options" 
-                   :key="key"
-                   class="option">
-                {{ key }}. {{ option }}
-              </div>
+          <div v-for="question in chapter.questions" 
+               :key="question.id"
+               class="question-card">
+            <div class="question-header" @click="toggleQuestion(question)">
+              <span class="toggle-icon">{{ question.isVisible ? '▼' : '▶' }}</span>
+              <strong>{{ question.id }}. {{ question.content }}</strong>
             </div>
             
-            <!-- 答案区域 -->
-            <div class="answer-section">
-              <button @click="toggleAnswer(question)">
-                {{ question.showAnswer ? '隐藏答案' : '显示答案' }}
-              </button>
-              <span v-if="question.showAnswer" class="answer">
-                答案：{{ question.answer }}
-              </span>
+            <div v-show="question.isVisible" class="question-content">
+              <div class="options">
+                <div v-for="(option, key) in question.options" 
+                     :key="key"
+                     class="option">
+                  {{ key }}. {{ option }}
+                </div>
+              </div>
+              
+              <div class="answer-section">
+                <button @click.stop="toggleAnswer(question)">
+                  {{ question.showAnswer ? '隐藏答案' : '显示答案' }}
+                </button>
+                <span v-if="question.showAnswer" class="answer">
+                  答案：{{ question.answer }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -60,22 +69,54 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { parseQuestions } from '../utils/parseQuestions';
+import { loadQuestionsData } from '../data/questions';
 
-// 章节数据
 const chapters = ref([]);
 const currentChapter = ref('');
+const loading = ref(true);
+const error = ref(null);
 
-// 从文件加载题目内容
 const loadQuestions = async () => {
   try {
-    const response = await fetch('/src/files/JAVAEE选择题.md');
-    const markdown = await response.text();
-    chapters.value = parseQuestions(markdown);
+    loading.value = true;
+    error.value = null;
+    
+    console.log('开始加载题目...');
+    const data = await loadQuestionsData();
+    console.log('题目数据加载完成，长度:', data?.length);
+    
+    if (!data) {
+      throw new Error('没有加载到题目数据');
+    }
+    
+    const parsedChapters = parseQuestions(data);
+    console.log('解析后的章节数:', parsedChapters?.length);
+    console.log('解析后的章节:', parsedChapters);
+    
+    chapters.value = parsedChapters;
+    
+    if (!chapters.value || chapters.value.length === 0) {
+      throw new Error('解析题目数据失败');
+    }
+
+    // 初始化问题状态
+    chapters.value.forEach((chapter, idx) => {
+      console.log(`章节 ${idx + 1}:`, chapter.title);
+      console.log(`题目数量:`, chapter.questions.length);
+      chapter.questions.forEach(question => {
+        question.isVisible = false;
+        question.showAnswer = false;
+      });
+    });
+
     if (chapters.value.length > 0) {
       currentChapter.value = chapters.value[0].id;
     }
-  } catch (error) {
-    console.error('加载题目失败:', error);
+  } catch (err) {
+    console.error('加载题目失败:', err);
+    error.value = err.message;
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -98,7 +139,7 @@ const toggleAnswer = (question) => {
   question.showAnswer = !question.showAnswer;
 };
 
-// 组件挂载时加载题目
+// 只需要调用一次 loadQuestions
 onMounted(() => {
   loadQuestions();
 });
@@ -156,25 +197,23 @@ onMounted(() => {
 }
 
 .question-card {
-  margin: 15px 0;
-  border: 1px solid #ddd;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
+  margin: 15px 0;
   padding: 15px;
-  background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .question-header {
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px;
+  padding: 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
 .question-header:hover {
-  background: #f5f5f5;
-  border-radius: 4px;
+  background-color: #f5f5f5;
 }
 
 .toggle-icon {
@@ -188,12 +227,18 @@ onMounted(() => {
 }
 
 .options {
-  margin: 10px 0;
+  margin: 15px 0;
+  padding-left: 20px;
 }
 
 .option {
-  margin: 8px 0;
-  padding: 5px 10px;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 4px;
+}
+
+.option:hover {
+  background-color: #f8f8f8;
 }
 
 .answer-section {
@@ -231,5 +276,21 @@ onMounted(() => {
     width: 100%;
     position: static;
   }
+}
+
+/* 添加新样式 */
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error {
+  text-align: center;
+  padding: 20px;
+  color: #ff4444;
+  background: #ffeeee;
+  border-radius: 8px;
+  margin: 20px 0;
 }
 </style> 

@@ -1,53 +1,56 @@
-export function parseQuestions(markdown) {
+export function parseQuestions(text) {
   const chapters = [];
   let currentChapter = null;
-  
-  // 按行分割内容
-  const lines = markdown.split('\n');
-  
   let currentQuestion = null;
   
-  lines.forEach(line => {
+  // 按行分割文本
+  const lines = text.split('\n').map(line => line.trim());
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // 跳过空行和分隔符
+    if (!line || line === '---') continue;
+    
     // 匹配章节标题
-    const chapterMatch = line.match(/^# (.+)/);
-    if (chapterMatch && chapterMatch[1].includes('第')) {
+    if (line.startsWith('第') && line.includes('章')) {
       currentChapter = {
         id: `chapter${chapters.length + 1}`,
-        title: chapterMatch[1],
+        title: line,
         questions: []
       };
       chapters.push(currentChapter);
-      return;
+      continue;
     }
     
     // 匹配题目
-    const questionMatch = line.match(/^\*\*(\d+)\. (.+)\*\*/);
+    const questionMatch = line.match(/^(\d+)\. (.+)/);
     if (questionMatch && currentChapter) {
       currentQuestion = {
         id: questionMatch[1],
         content: questionMatch[2],
         options: {},
         answer: '',
-        isVisible: true,
+        isVisible: false,
         showAnswer: false
       };
       currentChapter.questions.push(currentQuestion);
-      return;
+      continue;
     }
     
     // 匹配选项
     const optionMatch = line.match(/^([A-D])\. (.+)/);
     if (optionMatch && currentQuestion) {
       currentQuestion.options[optionMatch[1]] = optionMatch[2];
-      return;
+      continue;
     }
     
     // 匹配答案
-    const answerMatch = line.match(/^\*\*答案：([A-D])\*\*/);
+    const answerMatch = line.match(/^答案：\s*([A-D])/);
     if (answerMatch && currentQuestion) {
       currentQuestion.answer = answerMatch[1];
     }
-  });
+  }
   
   return chapters;
 } 
